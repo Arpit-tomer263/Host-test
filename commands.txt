@@ -1,18 +1,31 @@
-sudo apt install python3 python3-pip -y
-python3 --version
-sudo apt install git -y
-git clone <You're link>
-cd your-repository
-sudo apt install python3-venv -y
+#!/bin/bash
+
+# Install Python and dependencies
+sudo apt update
+sudo apt install python3 python3-pip git python3-venv tmux -y
+
+# Clone the repository
+git clone https://github.com/Arpit-tomer263/Host-test.git
+cd Host-test
+
+# Set up Python virtual environment
 python3 -m venv venv
 source venv/bin/activate
+
+# Install Python dependencies from requirements.txt
 pip install -r requirements.txt
-sudo apt install tmux -y
-tmux new-session -s Botsession
-tmux new-session -s ngroksession
+
+# Install and set up ngrok
 curl -s https://ngrok.com/download | bash
 sudo mv ngrok /usr/local/bin
 ngrok authtoken <Your authtoken>
-ngrok http
+
+# Start tmux sessions
+tmux new-session -d -s Botsession
+tmux new-session -d -s ngroksession
+
+# Start ngrok to expose the required service
+ngrok http 5000  # Or whatever port your application is running on
+
 
 

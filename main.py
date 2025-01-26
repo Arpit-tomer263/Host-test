@@ -437,6 +437,17 @@ def create_csv_with_headers():
     df = pd.DataFrame(columns=headers)
     df.to_csv(CSV_FILE, index=False)
 
+
+@app.route('/Checking',methods=['Post'])
+def checking():
+    data = request.get_json()  # Get incoming JSON data
+    
+    if data:
+        # Send back "working" to the client
+        return jsonify({"message": "working"}), 200
+
+
+
 # Webhook route to process incoming JSON data
 @app.route('/webhook', methods=['POST'])
 def webhook():
