@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters,CallbackQueryHandler
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from threading import Thread
 import pandas as pd
 import json
