@@ -1,0 +1,33 @@
+Trade No,Type,Signal,Date/Time,Price USD,Contracts,Profit,Profit %,Cum. Profit,Cum. Profit %,Run-up,Run-up %,Drawdown,Drawdown %,Risk,Reward,Pair,Timeframe,Comment
+1,Profit,Profit,1/26/25 10:30,1.12,10,50,5,50,100,100,10,30,3,20,100,EUR/USD,15,First profit trade
+2,Profit,Profit,1/27/25 10:30,1.12,10,50,5,100,200,100,10,30,3,20,100,EUR/USD,15,Second profit trade
+3,Loss,Loss,1/28/25 12:45,1.1,15,-20,-2,80,160,90,8,50,5,10,200,EUR/USD,15,First loss trade
+4,Profit,Profit,1/29/25 14:30,1.15,20,60,6,140,280,120,12,10,1,25,150,EUR/USD,15,Big profit win
+5,Loss,Loss,1/30/25 16:10,1.08,25,-30,-3,110,220,70,7,40,5,15,180,EUR/USD,15,Recovery attempt failed
+6,Profit,Profit,1/31/25 10:30,1.18,10,40,4,150,300,140,14,20,1,18,110,EUR/USD,15,Recovered losses
+7,Profit,Profit,2/1/25 9:15,1.14,15,70,7,220,440,130,13,10,1,30,210,EUR/USD,15,Steady gains
+8,Loss,Loss,2/2/25 11:00,1.09,20,-25,-2.5,195,390,50,5,60,3,20,150,EUR/USD,15,Small loss control
+9,Profit,Profit,2/3/25 13:30,1.2,25,90,9,285,570,150,15,5,0.5,35,240,EUR/USD,15,Huge gain trend
+10,Loss,Loss,2/4/25 8:20,1.07,30,-15,-1.5,270,540,70,7,70,4,15,300,EUR/USD,15,Risking recovery
+11,Profit,Profit,2/5/25 15:45,1.21,12,-1000,10,370,740,180,18,15,2,50,270,EUR/USD,15,Largest profit trade
+12,Profit,Profit,2/6/25 17:05,1.23,18,45,4.5,415,830,110,11,10,1,30,160,EUR/USD,15,Short term gain
+13,Loss,Loss,2/7/25 9:35,1.04,20,-40,-4,375,750,60,6,40,5,20,250,EUR/USD,15,Major loss
+14,Profit,Profit,2/8/25 10:40,1.18,25,1505,5.5,430,860,120,12,35,2,22,220,EUR/USD,15,Good recovery
+15,Profit,Profit,2/9/25 14:20,1.22,15,65,6.5,495,990,130,13,25,1,27,210,EUR/USD,15,Trend following
+16,Loss,Loss,2/10/25 16:05,1.09,20,-35,-3.5,460,920,80,8,50,4,20,180,EUR/USD,15,Controlled loss
+17,Profit,Profit,2/11/25 13:25,1.2,18,75,7.5,535,1070,140,14,30,2,24,250,EUR/USD,15,Sustained profit
+18,Profit,Profit,2/12/25 11:50,1.19,20,80,8,615,1230,160,16,35,1,20,230,EUR/USD,15,Quick profit
+19,Loss,Loss,2/13/25 12:15,1.06,30,-25,-2.5,590,1180,70,7,60,3,18,190,EUR/USD,15,Loss mitigation
+20,Profit,Profit,2/14/25 9:40,1.17,12,95,9.5,685,1370,170,17,20,1,28,250,EUR/USD,15,Ending on a high note
+21,Profit,Profit,1/26/25 10:30,1.12,10,50,5,735,1470,100,10,30,3,20,100,EUR/USD,15,First profit trade
+22,Profit,Profit,1/26/25 10:30,1.12,10,50,5,785,1570,100,10,30,3,20,100,EUR/USD,15,First profit trade
+23,Profit,Profit,1/26/25 10:30,1.12,10,50,5,835,1670,100,10,30,3,20,100,EUR/USD,15,First profit trade
+24,Profit,Profit,1/26/25 10:30,1.12,10,50,5,885,1770,100,10,30,3,20,100,EUR/USD,15,First profit trade
+25,Profit,Profit,1/26/25 10:30,1.12,10,50,5,935,1870,100,10,30,3,20,100,EUR/USD,15,First profit trade
+26,Profit,Profit,1/26/25 10:30,1.12,10,50,5,985,1970,100,10,30,3,20,100,EUR/USD,15,First profit trade
+27,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1035,2070,100,10,30,3,20,100,EUR/USD,15,First profit trade
+28,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1085,2170,100,10,30,3,20,100,EUR/USD,15,First profit trade
+29,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1135,2270,100,10,30,3,20,100,EUR/USD,15,First profit trade
+30,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1185,2370,100,10,30,3,20,100,EUR/USD,15,First profit trade
+31,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1235,2470,100,10,30,3,20,100,EUR/USD,15,First profit trade
+32,Profit,Profit,1/26/25 10:30,1.12,10,50,5,1285,2570,100,10,30,3,20,100,EUR/USD,15,First profit trade

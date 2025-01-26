@@ -1,0 +1,4 @@
+python-telegram-bot==20.1
+Flask==2.1.2
+pandas==1.5.3
+Pillow==9.3.0
