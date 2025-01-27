@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters,CallbackQueryHandler
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from threading import Thread
 import pandas as pd
 import json
@@ -9,10 +9,10 @@ import os
 from PIL import ImageDraw, ImageFont
 
 
+
+
 # Flask setup
 app = Flask(__name__)
-
-
 
 
 Total_request = 0
@@ -65,13 +65,41 @@ def calculate_net_profit(trade_profit):
         return f"Error processing the CSV file: {e}"
 
 
+def calculate_max_drawdown_usd(df, initial_capital):
+    """
+    Calculate the Maximum Drawdown (MDD) in USD.
+
+    Parameters:
+    - df (pd.DataFrame): DataFrame containing trades or portfolio data with 'Profit' column.
+    - initial_capital (float): Starting capital.
+
+    Returns:
+    - max_drawdown_usd (float): Maximum drawdown in USD.
+    - modified_df (pd.DataFrame): DataFrame with added equity curve and drawdown columns.
+    """
+    # Create equity curve from cumulative profits
+    df['Equity'] = initial_capital + df['Profit'].cumsum()
+
+    # Calculate the running maximum of the equity curve
+    df['Peak_Equity'] = df['Equity'].cummax()
+
+    # Calculate drawdown in USD at each point
+    df['Drawdown_USD'] = df['Equity'] - df['Peak_Equity']
+
+    # Maximum Drawdown in USD
+    max_drawdown_usd = df['Drawdown_USD'].min()  # Minimum value will be the largest drawdown in negative
+
+    return f"${-max_drawdown_usd:.2f} USD"
+
 Main_Capital = 9000000
+
+
 
 def generate_dashboard():
     # Read the CSV file
     csv_file = 'data.csv'
     df = pd.read_csv(csv_file)
-    
+
     def parse_dates(date_series):
         formats = ["%m/%d/%y %H:%M", "%Y-%m-%d %H:%M:%S"]  # List of formats to try
         for fmt in formats:
@@ -79,27 +107,41 @@ def generate_dashboard():
                 return pd.to_datetime(date_series, format=fmt, errors='coerce')
             except ValueError:
                 continue
-        # If all formats fail, fall back to auto-parsing
         return pd.to_datetime(date_series, errors='coerce')
 
     df['Date/Time'] = parse_dates(df['Date/Time'])
-
-
-
     df['Profit'] = pd.to_numeric(df['Profit'], errors='coerce')
 
     # Calculate cumulative capital growth
-    initial_capital = 9000000
-    df['Capital'] = initial_capital + df['Profit'].cumsum()
-
-    # Count total trades (total number of rows in the DataFrame)
+    df['Capital'] = Main_Capital + df['Profit'].cumsum()
+    # Count total trades
     total_trades = len(df)
-    
+     
     # Count winning and losing trades
     win_trades = df[df['Profit'] > 0].shape[0]
     loss_trades = df[df['Profit'] <= 0].shape[0]
     profit_percent = (win_trades / total_trades) * 100
-    max_drawdown = df['Drawdown'].max()
+    # Initialize for max drawdown calculations
+    max_equity_before_trade = Main_Capital  # Start with the initial capital
+    peak_equity = Main_Capital  # Peak equity at any point in time
+    drawdowns = []  # Store drawdown calculations for each trade
+
+    # Track Max Drawdown for each trade position
+    for i, row in df.iterrows():
+        # Keep track of the highest equity before each trade
+        peak_equity = max(peak_equity, df.loc[:i, 'Capital'].max())
+
+        # Calculate the drawdown for the open trade
+        drawdown = peak_equity - row['Capital']
+        drawdowns.append(drawdown)
+
+    # Add the drawdowns column to the dataframe
+    df['Drawdown (USD)'] = drawdowns
+    df['Peak'] = df['Capital'].max()
+
+    
+    # Find the largest (maximum) drawdown in USD
+    max_drawdown = calculate_max_drawdown_usd(df, Main_Capital)
     gross_profit = df[df['Profit'] > 0]['Profit'].sum()
     gross_loss = df[df['Profit'] < 0]['Profit'].sum()
     profit_factor = abs(gross_profit / gross_loss) if gross_loss != 0 else float('inf')
@@ -111,13 +153,16 @@ def generate_dashboard():
     max_profit = df['Profit'][df['Profit'] > 0].max() if not df[df['Profit'] > 0].empty else 0
     total_profit = df[df['Profit'] > 0]['Profit'].sum()
     total_loss = abs(df[df['Profit'] < 0]['Profit'].sum())
-    # New Y-Axis Limits
-    df['Capital'] = initial_capital + df['Profit'].cumsum()
-    y_axis_max = initial_capital + total_profit + 1000
-    y_axis_min = initial_capital - (total_loss + 1000)
-    # Center Y-Axis with Initial Capital
-    y_axis_middle = initial_capital
-    
+
+
+    # Setting y-axis limits
+    if df['Capital'].min() < Main_Capital:
+        y_axis_min = df['Capital'].min() - 500  # Adjust y-axis minimum based on the lowest capital
+    else:
+        y_axis_min = Main_Capital - 500  # Default to Main_Capital - 500 if no significant drop
+
+    y_axis_max = df['Capital'].max() + 1000
+
     # Define chart dimensions and margins
     chart_width, chart_height = 600, 200
     chart_margin = 2
@@ -127,20 +172,19 @@ def generate_dashboard():
     green = (8, 153, 129)
     red = (242, 54, 69)
     background = (19, 23, 34)
-    purple = (128, 0, 128)
-    
+
     # Create an image with the specified background color
     img = Image.new(mode='RGB', size=(800, 500), color=background)
     draw = ImageDraw.Draw(img)
-    
+
     # Load font
     font_path = "arial.ttf"  # Use a valid font path on your system
     font = ImageFont.truetype(font_path, size=13)
-    
+
     # Define positions
     x, y = 10, 10
     spacing = 110
-    
+
     # Draw the headers
     headers = ["Net Profit:", "Total Closed Trades:", "Win Rate:", "Profit Factor:", "Max Drawdown:", "Avg P/L per trade", "RR Ratio:"]
     values = [
@@ -167,45 +211,44 @@ def generate_dashboard():
         value_width = value_bbox[2] - value_bbox[0]
         value_x = x + i * spacing + (spacing - value_width) / 2
         draw.text((value_x, y + 40), str(values[i]), fill=colors[i], font=font)
-    
+
     # Calculate the center position for the chart
     chart_x = (img.width - chart_width) // 2
     chart_y = (img.height - chart_height) // 2
+
     # Normalize capital for chart
-    min_capital = df['Capital'].min()
-    max_capital = df['Capital'].max()
-    initial_capital = df['Capital'].iloc[0]  # Initial Capital
-    normalized_capital = (df['Capital'] - initial_capital) / (y_axis_max - y_axis_min) * (chart_height - 2 * chart_margin)
+    normalized_capital = (df['Capital'] - Main_Capital) / (y_axis_max - y_axis_min) * (chart_height - 2 * chart_margin)
 
     # Find the Y-coordinate for the initial capital
-    initial_y = chart_y + chart_height / 2  # Middle of the chart
-    normalized_y = initial_y - normalized_capital.iloc[0]  # Adjust based on normalized value
-
-    
-
+    initial_y = chart_y + chart_height - chart_margin  # Bottom of the chart
 
     # Draw rectangle for the chart background
     draw.rectangle([chart_x, chart_y, chart_x + chart_width, chart_y + chart_height], outline=white, width=2)
 
-    # Generate Y-axis labels dynamically
-    # Number of labels to display on the Y-axis (including min, middle, and max)
+    # Generate Y-axis labels
     num_labels = 5  
-    step = (y_axis_max - y_axis_middle) / ((num_labels - 1) / 2)
+    step = (y_axis_max - y_axis_min) / (num_labels - 1)
 
-    # Generate Y-axis labels symmetrically above and below the middle value
-    y_labels = [
-        f"${(y_axis_middle - step * ((num_labels - 1) / 2 - i)):,.0f}" for i in range(num_labels)
-    ]
+    y_labels = []
+    if df['Capital'].min() < Main_Capital:  # When there is a loss below initial capital
+        adjusted_step = (y_axis_max - y_axis_min) / 5
+        y_labels = [
+            f"${y_axis_min + adjusted_step * i:,.0f}" for i in range(5)
+        ]
+    else:
+        y_labels = [
+            f"${(Main_Capital + step * i):,.0f}" for i in range(num_labels)
+        ]
 
     # Position the labels along the Y-axis
     for i, label in enumerate(y_labels):
         # Calculate Y position for each label
-        y = chart_y + chart_height - chart_margin - i * (chart_height - 2 * chart_margin) / (len(y_labels) - 1)
-        draw.text((12, y), label, fill="white", font=font)
+        y_position = chart_y + chart_height - chart_margin - i * (chart_height - 2 * chart_margin) / (len(y_labels) - 1)
+        draw.text((12, y_position), label, fill="white", font=font)
 
     # Draw the X-axis
     if total_trades > 6:
-        # Create evenly spaced labels, ensuring the first and last align perfectly
+        # Create evenly spaced labels
         gap = (chart_width - 2 * chart_margin) / 5
         x_positions = [chart_x + chart_margin + i * gap for i in range(6)]
         x_values = [1] + [(total_trades - 1) // 5 * i + 1 for i in range(1, 5)] + [total_trades]
@@ -217,28 +260,37 @@ def generate_dashboard():
             x_position = chart_x + chart_margin + i * (chart_width - 2 * chart_margin) / (total_trades - 1)
             draw.text((x_position - 12, chart_y + chart_height + 10), str(i + 1), fill=white, font=font)
 
-    for i in range(1, total_trades):
-        # Calculate X1, Y1 (previous point)
-        x1 = chart_x + chart_margin + (i - 1) * (chart_width - 2 * chart_margin) / (total_trades - 1)
-        y1 = initial_y - normalized_capital.iloc[i - 1]
+    initial_y = chart_y + chart_height - chart_margin - ((Main_Capital - y_axis_min) / (y_axis_max - y_axis_min) * (chart_height - 2 * chart_margin))
 
-        # Calculate X2, Y2 (current point)
-        x2 = chart_x + chart_margin + i * (chart_width - 2 * chart_margin) / (total_trades - 1)
-        y2 = initial_y - normalized_capital.iloc[i]
+    # Draw the lines for capital according to the normalized values
+    for i in range(total_trades):
+        # Calculate the X position for each trade
+        x = chart_x + chart_margin + i * (chart_width - 2 * chart_margin) / (total_trades - 1)
+
+        # Calculate the Y position for the current capital value
+        y = chart_y + chart_height - chart_margin - ((df['Capital'].iloc[i] - y_axis_min) / (y_axis_max - y_axis_min) * (chart_height - 2 * chart_margin)) + 27
 
         # Ensure Y-coordinates stay within the chart area
-        y1 = min(max(y1, chart_y + chart_margin), chart_y + chart_height - chart_margin)
-        y2 = min(max(y2, chart_y + chart_margin), chart_y + chart_height - chart_margin)
+        y = min(max(y, chart_y + chart_margin), chart_y + chart_height - chart_margin)
+
         # Line color (based on profit/loss)
         if df['Capital'].iloc[i] < Main_Capital:
-            
-            line_color = red  # Color the line red if the capital is less than Main_Capital (loss)
+            line_color = red  # Loss
         elif df['Capital'].iloc[i] > Main_Capital:
-            line_color = green  # Color the line green if the capital is greater than Main_Capital (profit)
+            line_color = green  # Profit
         else:
-            line_color = white  # This line is optional for when the capital equals Main_Capital
+            line_color = white  # No change
 
-        draw.line([(x1, y1), (x2, y2)], fill=line_color, width=3)
+        # Drawing the line starting from the initial_y position for the first point
+        if i > 0:
+            # Connect the previous point to the current point with a line
+            draw.line([(previous_x, previous_y), (x, y)], fill=line_color, width=3)
+
+        # Save the current position for the next iteration
+        previous_x, previous_y = x, y
+
+
+
     # Add additional information below the chart
     date_range = f"Date Range: From {df['Date/Time'].min().date()} to {df['Date/Time'].max().date()}"
     currency_pair = ', '.join(df['Pair'].unique())
@@ -367,7 +419,7 @@ async def get_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     print(user_id)
-    await update.message.reply_text("Welcome to NRT-Forex Management Bot")
+    await update.message.reply_text("Welcome to NRT Forex Performance Dashboard BOT")
     keyboard = [
             [InlineKeyboardButton("Get DashBoard", callback_data='dashboard'),
             InlineKeyboardButton("Get Perfomance CSV", callback_data='csv_perform')],
@@ -404,7 +456,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if Total_request >= 20000:
             await query.edit_message_text(f"NGROK limit of 20000 got exceeds.Please re-run the server.")
         else:
-            await query.edit_message_text(f"Currently Limit Used is:-{Total_request}")
+            await query.edit_message_text(f"Currently Limit Used is:-{Total_request}/20000")
 
 
 
@@ -462,7 +514,9 @@ def webhook():
     if json_data:
         # Extract the necessary data from the JSON payload
         trade_data = {
-            "Type": json_data.get("Signal", ""),
+            "Pair": json_data.get("Pair", ""),  # Get Pair
+            "Timeframe": json_data.get("TimeFrame", ""),  # Get Timeframe
+            "Type": json_data.get("Type", ""),
             "Signal": json_data.get("Signal", ""),
             "Date/Time": json_data.get("Date/time", ""),
             "Price USD": json_data.get("Price USD", ""),
@@ -475,8 +529,6 @@ def webhook():
             "Drawdown %": json_data.get("Drawdown %", ""),
             "Risk": json_data.get("Risk", ""),
             "Reward": json_data.get("Reward", ""),
-            "Pair": json_data.get("Pair", ""),  # Get Pair
-            "Timeframe": json_data.get("Timeframe", ""),  # Get Timeframe
             "Comment": json_data.get("Comment", "")  # Get Comment
         }
 
@@ -488,7 +540,7 @@ def webhook():
         df = pd.read_csv(CSV_FILE)
         
         # Append the new trade data to the DataFrame using pd.concat
-        trade_data["Trade No"] = len(df) + 1  # Increment trade number for each new trade
+        trade_data["Trade #"] = len(df) + 1  # Increment trade number for each new trade
         new_trade_df = pd.DataFrame([trade_data])
         df = pd.concat([df, new_trade_df], ignore_index=True)
         
