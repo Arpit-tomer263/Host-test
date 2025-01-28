@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 # The URL of your webhook
-server_url = 'http://127.0.0.1:5000/webhook'
+server_url = 'https://humble-eureka-q7vv6wjwgpq6cxxxv-5000.app.github.dev/webhook'
 pair = "EURUSD"
 signalType = "Buy"
 entryPrice = 1.2350

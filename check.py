@@ -1,17 +1,14 @@
 import requests
 
-# Flask server URL
-url = "http://localhost:5000/Checking"
+url = "https://humble-eureka-q7vv6wjwgpq6cxxxv-5000.app.github.dev/Checking"
+payload = {"data": "example"}
 
-# Send data to the Flask server (can be empty or include whatever data you want)
-payload = {"data": "example"}  # Example data to send, can be an empty JSON
+# Optional headers if necessary
+headers = {'Authorization': '75923'}
 
-# POST request to /Checking
-response = requests.post(url, json=payload)
+print(f"Sending headers: {headers}")  # Debugging line to print headers
 
-# Print the response from the server
-if response.status_code == 200:
-    response_data = response.json()
-    print(f"Server response: {response_data['message']}")
-else:
-    print(f"Failed to get response. Status code: {response.status_code}")
+response = requests.post(url, json=payload, headers=headers, verify=False)
+
+print(f"Response code: {response.status_code}")
+print(f"Response body: {response.text}")
